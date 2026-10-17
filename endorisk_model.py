@@ -6,8 +6,8 @@ Control    : recalibrated random forest, returned under 'control' but not shown 
 
 Study-context variables (region, design, unit) are averaged over their observed joint
 distribution in the training arms (direct standardization, one arm = one context, equal
-weight). Calendar variables are held at today's values: era = '2011+', year = min(2026, max
-training year) — the ridge has a linear year term and must not extrapolate past the data.
+weight). The only time variable is the era, held at '2011+' (a case seen today cannot belong
+to an earlier era). There is no linear calendar term.
 
 case = dict(kinematics, alloy, operator, uses_teeth, tooth_group)
 """
@@ -19,7 +19,7 @@ KINEMATICS = ["Rotary", "Reciprocating"]
 ALLOYS = ["Conventional NiTi", "M-Wire", "Heat-treated (CM/Blue)"]
 OPERATORS = ["Endodontist", "Graduate student", "Undergraduate student", "General practitioner"]
 TOOTH_GROUPS = ["Molars", "Posterior", "All", "Other/NR"]
-TODAY_YEAR, TODAY_ERA = 2026, "2011+"
+TODAY_ERA = "2011+"
 
 def use_policy_from_uses(k: int) -> str:
     return "Single tooth" if k <= 1 else ("Up to 4 teeth" if k <= 4 else "More than 4 teeth")
@@ -32,7 +32,6 @@ def _expit(z): return 1 / (1 + np.exp(-np.clip(z, -50, 50)))
 def _rows(m, case, contexts):
     """design matrix (one row per context) in the bundle's column order, numerics standardized"""
     cols = m["ridge_cols"]; X = np.zeros((len(contexts), len(cols)))
-    year = min(TODAY_YEAR, m["year_range"][1])
     lev_fixed = dict(kinematics=case["kinematics"], alloy2=case["alloy"], operator=case["operator"],
                      use_policy=use_policy_from_uses(int(case["uses_teeth"])), tooth_group2=case["tooth_group"], era=TODAY_ERA)
     for i, ctx in enumerate(contexts):
@@ -41,7 +40,6 @@ def _rows(m, case, contexts):
             c = f"{f}_{l}"
             if c in cols: X[i, cols.index(c)] = 1.0
         X[i, cols.index("max_uses_teeth")] = float(case["uses_teeth"])
-        X[i, cols.index("year")] = float(year)
     Xraw = X.copy()
     X[:, m["num_idx"]] = (X[:, m["num_idx"]] - m["num_mu"]) / m["num_sd"]
     return X, Xraw, lev_fixed
