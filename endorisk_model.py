@@ -24,8 +24,14 @@ TODAY_ERA = "2011+"
 def use_policy_from_uses(k: int) -> str:
     return "Single tooth" if k <= 1 else ("Up to 4 teeth" if k <= 4 else "More than 4 teeth")
 
+EXPECTED_NUMERIC = ["max_uses_teeth"]
+
 def load_model(path=MODEL_PATH):
-    return joblib.load(path)
+    m = joblib.load(path)
+    if list(m.get("num_cols", [])) != EXPECTED_NUMERIC:
+        raise RuntimeError(f"Model file {path.name} (version {m.get('version')}) expects numeric features "
+                           f"{m.get('num_cols')} but this code fills {EXPECTED_NUMERIC}. Retrain with train_arms_model.py.")
+    return m
 
 def _expit(z): return 1 / (1 + np.exp(-np.clip(z, -50, 50)))
 

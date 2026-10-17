@@ -11,9 +11,10 @@ import endorisk_model as em
 st.set_page_config(page_title="EndoRisk : prototype", page_icon="🦷", layout="centered")
 
 @st.cache_resource
-def get_model():
+def get_model(model_mtime: float):
+    """model_mtime is only a cache key: a new model file forces a reload instead of serving a stale bundle."""
     return em.load_model()
-m = get_model()
+m = get_model(em.MODEL_PATH.stat().st_mtime)
 
 KINEMATICS_FR = {"Rotation continue": "Rotary", "Réciprocité": "Reciprocating"}
 ALLOY_FR = {"NiTi conventionnel": "Conventional NiTi", "M-Wire": "M-Wire", "Traité thermiquement (CM / Blue)": "Heat-treated (CM/Blue)"}
